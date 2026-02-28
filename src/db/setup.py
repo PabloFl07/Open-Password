@@ -1,3 +1,8 @@
+
+# TODO: validación de correo electrónico
+
+# ! El campo username, user_id no son necesarios para un programa personal, pero facilitan la implementacion de varios usuarios
+ 
 from database import Database, AuthManager
 import getpass
 
@@ -9,7 +14,9 @@ def setup_sqlite(db: Database):
         CREATE TABLE IF NOT EXISTS credentials (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL
+            password_hash TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            two_fa_contact TEXT NOT NULL
         );
     ''')
     
@@ -29,11 +36,14 @@ def setup_sqlite(db: Database):
     admin_user = input("Introduce nombre de usuario admin: ")
     admin_pass = getpass.getpass("Introduce contraseña admin: ")
 
-    auth.register_user(admin_user, admin_pass)
+
+    two_fa_contact = input("Correo de recuperación: ")
+
+    auth.register_user(admin_user, admin_pass, two_fa_contact)
 
 
 
 if __name__ == "__main__":
-    db = Database("passmanager.db")
+    db = Database("passmanager.db") 
     setup_sqlite(db)
     print("Base de datos SQLite lista.")
