@@ -1,5 +1,6 @@
 
 # TODO: validación de correo electrónico
+# QUEDA OBSOLETO TRAS LA IMPLEMENTACION DE REGISTER
 
 # ! El campo username, user_id no son necesarios para un programa personal, pero facilitan la implementacion de varios usuarios
  
