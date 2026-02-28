@@ -86,6 +86,23 @@ class Database:
 
 class Verify:
 
+    def validate_password(password:str) -> list[str]:
+
+        requirements = []
+
+        if len(password) < 12:
+            requirements.append("La contraseña debe tener al menos 12 caracteres")
+        if not re.search(r'[A-Z]', password):
+            requirements.append("Debe contener al menos una mayúscula")
+        if not re.search(r'[a-z]', password):
+            requirements.append("Debe contener al menos una minúscula")
+        if not re.search(r'\d', password):
+            requirements.append("Debe contener al menos un número")
+        if not re.search(r'[^A-Za-z0-9]', password):
+            requirements.append("Debe contener al menos un caracter especial")
+
+        return requirements
+
     @staticmethod
     def validate_email(email: str) -> bool:
         """FIX #5: Validación básica de formato de correo electrónico."""
@@ -139,7 +156,7 @@ class VaultManager:
         # FIX #1: Cifrar también site_name y site_user
         encrypted_site = self.engine.encrypt(site)
         encrypted_user = self.engine.encrypt(user)
-        encrypted_pass = self.engine.encrypt(password)
+        encrypted_pass = self.engine.encrypt(self.engine.generate_password())
         query = "INSERT INTO vault (user_id, site_name, site_user, site_password) VALUES (?, ?, ?, ?);"
         self.db.execute(query, (user_id, encrypted_site, encrypted_user, encrypted_pass))
 
