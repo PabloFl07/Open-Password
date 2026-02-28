@@ -1,2 +1,12 @@
 # Open-Password
----- es un gestor de contraseñas completo, permite generar, guardar y gestionar contraseñas de forma segura. 
+Open Password es un gestor de contraseñas completo, permite generar, guardar y gestionar contraseñas de forma segura. 
+
+
+### Modo de uso
+```
+```
+
+### Requirements
+```
+pip install psycopg2-binary bcrypt
+```

@@ -1,0 +1,4 @@
+src/db/main.py
+src/db/__pycache__
+passmanager.db
+.venv
