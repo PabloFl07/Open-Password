@@ -7,7 +7,11 @@ import os
 class AiModel:
 
     def __init__(self):
+<<<<<<< HEAD
         self._api_key = os.getenv("GROQ_API_KEY")
+=======
+        self._api_key = ""
+>>>>>>> e807d16 (fix: quitar api_key del código)
 
 
     def buscar_en_dataset(self):
@@ -33,7 +37,11 @@ class AiModel:
 
     def consultar_seguridad(self, password):
         #la entropia calculada por el modelo es la entropia en fuerza bruta, puede diferir de la entropía real de dos contraseñas semejantes
+<<<<<<< HEAD
         client = Groq(api_key=self._api_key)
+=======
+        client = Groq(api_key="")
+>>>>>>> e807d16 (fix: quitar api_key del código)
         system_prompt = f'Eres un analizador técnico de seguridad. Responde SOLO con datos, sin introducciones ni consejos éticos.AL final da que la contraseña usada para calcular la entropia no es la propia del usuario si no una de sus mismas caracteristicas'
         user_prompt = f"""Analiza la siguiente clave técnica: '{password}'
         
