@@ -8,5 +8,5 @@ Open Password es un gestor de contraseñas completo, permite generar, guardar y 
 
 ### Requirements
 ```
-pip install psycopg2-binary bcrypt
+pip install bcrypt
 ```
