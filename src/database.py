@@ -86,10 +86,22 @@ class Database:
 
 class Verify:
 
+    @staticmethod
+    def validar_campos(username: str, email: str, password: str, password_confirm: str) -> Optional[str]:
+        if not all([username, email, password, password_confirm]):
+            return "Por favor, rellena todos los campos."
+        if password != password_confirm:
+            return "Las contrasenas no coinciden."
+        errores = Verify.validate_password(password)
+        if errores:
+            return errores[0]
+        if not Verify.validate_email(email):
+            return "El formato del correo no es valido."
+        return None
+
+    @staticmethod
     def validate_password(password:str) -> list[str]:
-
         requirements = []
-
         if len(password) < 12:
             requirements.append("La contraseña debe tener al menos 12 caracteres")
         if not re.search(r'[A-Z]', password):
@@ -152,7 +164,7 @@ class VaultManager:
         self.engine = engine
         self.db = db
 
-    def add(self, user_id: int, site: str, user: str, password: str) -> None:
+    def add(self, user_id: int, site: str, user: str) -> None:
         # FIX #1: Cifrar también site_name y site_user
         encrypted_site = self.engine.encrypt(site)
         encrypted_user = self.engine.encrypt(user)
