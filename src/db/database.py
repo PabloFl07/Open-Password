@@ -1,8 +1,11 @@
-
 import bcrypt
 import sqlite3
+import base64
 from dataclasses import dataclass
 from typing import Optional, List, Any
+from encryption import EncryptionManager
+import secrets
+import re
 
 # --- MODELOS DE DATOS ---
 # User y entry para representar los objetos con los que se trabaja en las querys
@@ -14,6 +17,7 @@ class User:
 
     id: int
     username: str
+    salt : str
 
 
 @dataclass(frozen=True)
@@ -26,6 +30,12 @@ class Entry:
     site_password: str
 
     def __str__(self):
+
+        return f"Servicio: {self.site_name} | Usuario: {self.site_user} | Contraseña: {'*' * 10}"
+
+    # ! Implementado con un botón en la UI
+    def display(self) -> str: 
+        """Muestra la contraseña en texto plano. Usar con precaución."""
         return f"Servicio: {self.site_name} | Usuario: {self.site_user} | Contraseña: {self.site_password}"
 
 
@@ -74,85 +84,79 @@ class Database:
         self._conn.close()
 
 
+class Verify:
+
+    @staticmethod
+    def validate_email(email: str) -> bool:
+        """FIX #5: Validación básica de formato de correo electrónico."""
+        pattern = r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'
+        return bool(re.match(pattern, email))
+
+# ... (Imports y DataClasses se mantienen igual) ...
+
 class AuthManager:
     def __init__(self, db: Database):
         self.db = db
 
     def login(self, username: str, password: str) -> Optional[User]:
-        """
-        Verifica credenciales para el acceso al programa.
-        """
-        query = "SELECT id, password_hash FROM credentials WHERE username = ?;"
+        # CORRECCIÓN: Añadido 'salt' a la consulta SQL
+        query = "SELECT id, password_hash, salt FROM credentials WHERE username = ?;"
         row = self.db.execute(query, (username,), fetchone=True)
 
         try:
-            if row and bcrypt.checkpw(password.encode("utf-8"), row[1].encode("utf-8")):
-                # Retornamos el objeto User
-                return User(id=row[0], username=username)
-            raise ValueError("Usuario o contraseña incorrectos")
+            if row and bcrypt.checkpw(password.encode("utf-8"), row["password_hash"].encode("utf-8")):
+                # CORRECCIÓN: Acceso por nombre de columna (sqlite3.Row)
+                return User(id=row["id"], username=username, salt=row["salt"])
+            return None
         except Exception as e:
-            print(e)
+            print(f"Error en login: {e}")
+            return None
 
-    def change_master_password(self, password: str):
-        raise NotImplementedError("")
+    def register_user(self, username: str, password: str, two_fa_contact: str) -> int:
 
-    def register_user(self, username: str, password: str) -> int:
-        """
-        Registra un nuevo usuario en la tabla de acceso
-        """
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+        if not Verify.validate_email(two_fa_contact):
+            raise ValueError("Formato de correo electrónico inválido.")
 
-        query = "INSERT INTO credentials (username, password_hash) VALUES (?, ?) RETURNING id;"
-        row = self.db.execute(query, (username, hashed.decode("utf-8")), fetchone=True)
+
+        salt_login = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode("utf-8"), salt_login)
+
+        # Salt para el cifrado AES-GCM
+        salt_encrypt = secrets.token_bytes(16)
+        salt_encrypt_str = base64.b64encode(salt_encrypt).decode('utf-8')
+
+        # SQLite soporta RETURNING id en versiones recientes
+        query = "INSERT INTO credentials (username, password_hash, salt, two_fa_contact) VALUES (?, ?, ?, ?) RETURNING id;"
+        row = self.db.execute(query, (username, hashed.decode("utf-8"), salt_encrypt_str, two_fa_contact), fetchone=True)
         return row[0]
 
-    # TODO
-    def delete():
-        raise NotImplementedError("Delete no implementado")
-
-
 class VaultManager:
-    def __init__(self, db: Database):
+    def __init__(self, db: Database, engine: EncryptionManager):
+        self.engine = engine
         self.db = db
 
     def add(self, user_id: int, site: str, user: str, password: str) -> None:
-        """
-        Añade una entrada a la tabla
-        """
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+        # FIX #1: Cifrar también site_name y site_user
+        encrypted_site = self.engine.encrypt(site)
+        encrypted_user = self.engine.encrypt(user)
+        encrypted_pass = self.engine.encrypt(password)
         query = "INSERT INTO vault (user_id, site_name, site_user, site_password) VALUES (?, ?, ?, ?);"
-        self.db.execute(query, (user_id, site, user, hashed))
+        self.db.execute(query, (user_id, encrypted_site, encrypted_user, encrypted_pass))
 
     def list_all_entries(self, user_id: int) -> List[Entry]:
-        """
-        Recupera todas las entradas de un usuario y las mapea a objetos Entry.
-        """
-        # Obtenemos el nombre del servicio, nombre de usuario y contraseña
         rows = self.db.execute(
             "SELECT id, site_name, site_user, site_password FROM vault WHERE user_id = ?;",
             (user_id,),
             fetch=True,
         )
 
-        # Devuelve las coincidencias como una lista de objetos `Entry`
-        return [Entry(*row) for row in rows]
-
-    def list_by_site_name(self, user_id: int, site_name: "str"):
-        """
-        Aplica búsquedas por patrones para encontrar coincidencias similares según el nombre del servicio
-        """
-        raise NotImplementedError("")
-
-    def delete_by_site(self, site_name: str, user_id: int):
-        """
-        Elimina una entrada que coincidan con el nombre del sitio
-        """
-        query = "DELETE FROM vault WHERE site_name = ? AND user_id = ?;"
-        self.db.execute(query, (site_name, user_id))
-
-    def delete_by_id(self, entry_id: int, user_id: int):
-        """Borrado seguro por ID."""
-        query = "DELETE FROM vault WHERE id = ? AND user_id = ?;"
-        self.db.execute(query, (entry_id, user_id))
+        decrypted_entries = []
+        for row in rows:
+            # FIX #1: Descifrar todos los campos
+            decrypted_entries.append(Entry(
+                id=row["id"],
+                site_name=self.engine.decrypt(row["site_name"]),
+                site_user=self.engine.decrypt(row["site_user"]),
+                site_password=self.engine.decrypt(row["site_password"]),
+            ))
+        return decrypted_entries
