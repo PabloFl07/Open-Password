@@ -6,7 +6,7 @@ Security is the core of Gestor de Olesa. As a password manager, we enforce stric
 
 Do not report security vulnerabilities through public GitHub issues. 
 
-If you discover a security flaw, please practice responsible disclosure by emailing the maintainers directly at [insert email address]. We will acknowledge your report within 48 hours and provide status updates as we investigate and resolve the issue.
+If you discover a security flaw, please practice responsible disclosure by emailing the maintainers directly at pepe.lopez.martinez@udc.es , adrian.gvilar@udc.es , p.fernandezl@udc.es , xabier.pcabanas@udc.es.. We will acknowledge your report within 48 hours and provide status updates as we investigate and resolve the issue.
 
 ## Dependency Management
 
