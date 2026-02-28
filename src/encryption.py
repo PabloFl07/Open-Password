@@ -1,5 +1,6 @@
 import base64
 import secrets
+import string
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -40,3 +41,10 @@ class EncryptionManager:
             return self.aesgcm.decrypt(nonce, ciphertext, None).decode('utf-8')
         except Exception:
             return "--- ERROR: NO SE PUDO DESCIFRAR ---"
+
+    def generate_password(self, length=32):
+        alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+        while True:
+            password = ''.join(secrets.choice(alphabet) for _ in range(length))
+            if sum( c in "!@#$%^&*" for c in password) >= 3:
+                return password

@@ -87,6 +87,35 @@ class Database:
 class Verify:
 
     @staticmethod
+    def validar_campos(username: str, email: str, password: str, password_confirm: str) -> Optional[str]:
+        if not all([username, email, password, password_confirm]):
+            return "Por favor, rellena todos los campos."
+        if password != password_confirm:
+            return "Las contrasenas no coinciden."
+        errores = Verify.validate_password(password)
+        if errores:
+            return errores[0]
+        if not Verify.validate_email(email):
+            return "El formato del correo no es valido."
+        return None
+
+    @staticmethod
+    def validate_password(password:str) -> list[str]:
+        requirements = []
+        if len(password) < 12:
+            requirements.append("La contraseña debe tener al menos 12 caracteres")
+        if not re.search(r'[A-Z]', password):
+            requirements.append("Debe contener al menos una mayúscula")
+        if not re.search(r'[a-z]', password):
+            requirements.append("Debe contener al menos una minúscula")
+        if not re.search(r'\d', password):
+            requirements.append("Debe contener al menos un número")
+        if not re.search(r'[^A-Za-z0-9]', password):
+            requirements.append("Debe contener al menos un caracter especial")
+
+        return requirements
+
+    @staticmethod
     def validate_email(email: str) -> bool:
         """FIX #5: Validación básica de formato de correo electrónico."""
         pattern = r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'
@@ -135,11 +164,12 @@ class VaultManager:
         self.engine = engine
         self.db = db
 
-    def add(self, user_id: int, site: str, user: str, password: str) -> None:
+    def add(self, user_id: int, site: str, user: str, password: str | None = None) -> None:
         # FIX #1: Cifrar también site_name y site_user
         encrypted_site = self.engine.encrypt(site)
         encrypted_user = self.engine.encrypt(user)
-        encrypted_pass = self.engine.encrypt(password)
+        plain_pass     = self.engine.generate_password() if (not password or password == "__generate__") else password
+        encrypted_pass = self.engine.encrypt(plain_pass)
         query = "INSERT INTO vault (user_id, site_name, site_user, site_password) VALUES (?, ?, ?, ?);"
         self.db.execute(query, (user_id, encrypted_site, encrypted_user, encrypted_pass))
 
