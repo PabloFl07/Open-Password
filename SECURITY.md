@@ -8,13 +8,6 @@ Do not report security vulnerabilities through public GitHub issues.
 
 If you discover a security flaw, please practice responsible disclosure by emailing the maintainers directly at pepe.lopez.martinez@udc.es , adrian.gvilar@udc.es , p.fernandezl@udc.es , xabier.pcabanas@udc.es.. We will acknowledge your report within 48 hours and provide status updates as we investigate and resolve the issue.
 
-## Dependency Management
-
-We rely on automated tools (such as Dependabot) to monitor our Python dependencies for known vulnerabilities. 
-
-- Automated Pull Requests updating dependencies should be reviewed and merged promptly.
-- Do not downgrade dependencies unless there is a critical, documented compatibility issue.
-
 ## Secret Handling
 
 Never commit secrets, API keys, credentials, or passwords to the repository. 
