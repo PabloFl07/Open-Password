@@ -9,7 +9,7 @@ import threading
 from llm import AiModel
 import os
 
-DB_PATH = str(Path(__file__).parent / "passmanager.db")
+DB_PATH = os.getenv("DB_PATH", "app/data/vault.db")
 
 class AppSession:
     def _init_(self):
@@ -77,14 +77,14 @@ def main(page: ft.Page):
             autofocus=True,
         )
         password_field = ft.TextField(
-            label="Contraseña Maestra",
+            label="Contraseña",
             password=True,
             can_reveal_password=True,
             prefix_icon=ft.Icons.LOCK_OUTLINE,
             width=340,
         )
         login_btn = ft.Button(
-            "Desbloquear Bóveda",
+            "Acceder",
             icon=ft.Icons.LOCK_OPEN_OUTLINED,
             width=340,
             height=46,
@@ -129,8 +129,8 @@ def main(page: ft.Page):
                 content=ft.Column(
                     [
                         ft.Icon(ft.Icons.SHIELD_OUTLINED, size=64, color=ft.Colors.BLUE_300),
-                        ft.Text("Gestor de", size=26, weight=ft.FontWeight.BOLD),
-                        ft.Text("Identifícate para continuar", size=14, color=ft.Colors.GREY_400),
+                        ft.Text("Gestor de Olesa", size=26, weight=ft.FontWeight.BOLD),
+                        ft.Text("Log In", size=14, color=ft.Colors.GREY_400),
                         ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                         username_field,
                         password_field,
@@ -319,8 +319,8 @@ def main(page: ft.Page):
             }
 
             reg_user         = ft.TextField(label="Nombre de usuario",   prefix_icon=ft.Icons.PERSON_OUTLINE,      max_length=30,  **field_style)
-            reg_email        = ft.TextField(label="Correo electronico",  prefix_icon=ft.Icons.EMAIL_OUTLINED,      max_length=100, keyboard_type=ft.KeyboardType.EMAIL, **field_style)
-            reg_pass         = ft.TextField(label="Contrasena maestra",  prefix_icon=ft.Icons.LOCK_OUTLINE,        max_length=128, password=True, can_reveal_password=True, on_change=lambda e: actualizar_indicador(e.control.value), **field_style)
+            reg_email        = ft.TextField(label="Correo electrónico",  prefix_icon=ft.Icons.EMAIL_OUTLINED,      max_length=40, keyboard_type=ft.KeyboardType.EMAIL, **field_style)
+            reg_pass         = ft.TextField(label="Contrasena",  prefix_icon=ft.Icons.LOCK_OUTLINE,        max_length=128, password=True, can_reveal_password=True, on_change=lambda e: actualizar_indicador(e.control.value), **field_style)
             reg_pass_confirm = ft.TextField(label="Confirmar contrasena",prefix_icon=ft.Icons.LOCK_RESET_OUTLINED, max_length=128, password=True, can_reveal_password=True, **field_style)
 
             barra_fortaleza = ft.ProgressBar(width=340, value=0, color=ft.Colors.GREY_700, bgcolor="#1a1d27", border_radius=4)
@@ -463,8 +463,7 @@ def main(page: ft.Page):
         def make_row(entry):
             def on_copy(e, pwd=entry.site_password):
                 try:
-                    import pyperclip
-                    pyperclip.copy(pwd)
+                    page.set_clipboard(pwd)
                     show_snack("¡Contraseña copiada al portapapeles!")
                 except Exception as ex:
                     show_snack(f"Error al copiar: {ex}", ft.Colors.RED_400)
@@ -577,7 +576,7 @@ def main(page: ft.Page):
                 return
 
             try:
-                session.vault.add(session.user.id, site, usr, pwd or "_generate_")
+                session.vault.add(session.user.id, site, usr, pwd)
             except Exception as ex:
                 err_f.value = f"Error al guardar: {ex}"
                 page.update()
@@ -641,7 +640,7 @@ def main(page: ft.Page):
 
         # ── toolbar ───────────────────────────────────────────────────────────
         search_field = ft.TextField(
-            label="Buscar servicio o usuario...",
+            label="Búsqueda ...",
             prefix_icon=ft.Icons.SEARCH,
             width=260, height=44,
             on_change=lambda e: refresh_table(e.control.value),
@@ -725,5 +724,5 @@ def main(page: ft.Page):
     page.add(build_login_view())
 
 
-if __name__ == "_main_":
-    ft.app(main)
+if __name__ == "__main__":
+    ft.run(main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=8000)

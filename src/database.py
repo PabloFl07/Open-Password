@@ -168,7 +168,7 @@ class VaultManager:
         # FIX #1: Cifrar también site_name y site_user
         encrypted_site = self.engine.encrypt(site)
         encrypted_user = self.engine.encrypt(user)
-        plain_pass     = self.engine.generate_password() if (not password or password == "__generate__") else password
+        plain_pass     = self.engine.generate_password() if not password else password
         encrypted_pass = self.engine.encrypt(plain_pass)
         query = "INSERT INTO vault (user_id, site_name, site_user, site_password) VALUES (?, ?, ?, ?);"
         self.db.execute(query, (user_id, encrypted_site, encrypted_user, encrypted_pass))

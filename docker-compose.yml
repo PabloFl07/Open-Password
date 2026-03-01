@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  gestor-olesa:
+    build: .
+    container_name: olesa-app
+    ports:
+      - "8000:8000"
+    # Esta línea le dice a Docker que cargue el archivo .env
+    env_file:
+      - .env
+    environment:
+      # Pasamos las variables del .env al contenedor de Python
+      - API_KEY=${API_KEY}
+      - DB_PATH=${DB_PATH}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

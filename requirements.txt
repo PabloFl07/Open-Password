@@ -1,0 +1,4 @@
+flet==0.81.0
+groq==1.0.0
+cryptography==46.0.5
+bcrypt==5.0.0
