@@ -1,7 +1,6 @@
 import flet as ft
 from database import Database, AuthManager, VaultManager, User, Verify
 from encryption import EncryptionManager
-from pathlib import Path
 import sqlite3
 import logging
 import threading
@@ -9,18 +8,7 @@ import threading
 from llm import AiModel
 import os
 
-# Buscamos la variable de entorno que pondremos en el Docker-Compose
-# Si no existe (estás en local), usa la ruta de siempre
-env_db = os.getenv("DB_PATH")
-
-if env_db:
-    DB_PATH = env_db
-else:
-    # Ruta para tu PC local
-    DB_PATH = str(Path(__file__).parent / "passmanager.db")
-
-# Esto es clave: si la carpeta contenedora no existe, la creamos
-os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
+DB_PATH = "passmanager.db"
 
 class AppSession:
     def _init_(self):
@@ -28,6 +16,19 @@ class AppSession:
         self.auth: AuthManager | None = None
         self.vault: VaultManager | None = None
         self.user: User | None = None
+
+
+def _tables_exist(db_path: str) -> bool:
+    """Devuelve True si las tablas ya están creadas en la base de datos."""
+    try:
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='credentials';")
+        result = cur.fetchone()
+        conn.close()
+        return result is not None
+    except Exception:
+        return False
 
 
 def main(page: ft.Page):
@@ -38,11 +39,6 @@ def main(page: ft.Page):
     page.padding = 0
 
     session = AppSession()
-    # 1. Aseguramos que la carpeta contenedora exista (para evitar el error de SQLite)
-    os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
-
-# 2. Inicializamos siempre
-# El constructor de Database (sqlite3.connect) creará el archivo .db si no existe
     session.db = Database(DB_PATH)
     session.auth = AuthManager(session.db)
 
@@ -138,8 +134,8 @@ def main(page: ft.Page):
         login_btn.on_click       = on_login
         password_field.on_submit = on_login
 
-        # ── formulario login (DB ya existe) ───────────────────────────────────
-        if os.path.exists(DB_PATH):
+        # ── formulario login (tablas ya creadas) ──────────────────────────────
+        if _tables_exist(DB_PATH):
             return ft.Container(
                 content=ft.Column(
                     [
@@ -170,7 +166,7 @@ def main(page: ft.Page):
             page.scroll  = ft.ScrollMode.AUTO
 
             try:
-                db   = Database(DB_PATH)
+                db   = session.db
                 auth = AuthManager(db)
                 ai   = AiModel()
                 db.execute("""

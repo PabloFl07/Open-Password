@@ -6,9 +6,7 @@ services:
       - "8000:8000"
     environment:
       - API_KEY=${API_KEY}
-      # Esta ruta DEBE ser absoluta dentro del contenedor
-      - DB_PATH=/app/data/passmanager.db
     volumes:
-      # Mapea tu carpeta local 'data' a la carpeta interna con permisos
-      - ./data:/app/data
+      # La DB se guarda en /app (directorio de trabajo del contenedor)
+      - ./data:/app
     restart: unless-stopped
