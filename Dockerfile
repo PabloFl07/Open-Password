@@ -1,22 +1,23 @@
-# Usamos una versión ligera de Python
 FROM python:3.13-slim
 
-# Directorio de trabajo
-WORKDIR /app
-
-# Instalamos dependencias del sistema necesarias para Flet y librerías de Python
+# Instalamos dependencias del sistema para Flet
 RUN apt-get update && apt-get install -y \
+    libgtk-3-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiamos e instalamos dependencias de Python
+WORKDIR /app
+
+# Copiamos requerimientos e instalamos
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiamos todo el código de la carpeta src al contenedor
-COPY src/ .
+# Copiamos TODO el contenido de tu proyecto a /app
+COPY . .
 
-# Exponemos el puerto 8000 que configuramos en interface.py
+# Creamos la carpeta de datos y damos permisos totales
+RUN mkdir -p /app/data && chmod 777 /app/data
+
 EXPOSE 8000
 
-# Ejecutamos la aplicación
-CMD ["python", "interface.py"]
+# Ejecutamos apuntando a la carpeta src donde está tu archivo
+CMD ["python", "src/interface.py"]

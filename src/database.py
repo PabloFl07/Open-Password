@@ -33,7 +33,6 @@ class Entry:
 
         return f"Servicio: {self.site_name} | Usuario: {self.site_user} | Contraseña: {'*' * 10}"
 
-    # ! Implementado con un botón en la UI
     def display(self) -> str: 
         """Muestra la contraseña en texto plano. Usar con precaución."""
         return f"Servicio: {self.site_name} | Usuario: {self.site_user} | Contraseña: {self.site_password}"

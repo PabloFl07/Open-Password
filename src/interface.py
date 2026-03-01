@@ -9,7 +9,18 @@ import threading
 from llm import AiModel
 import os
 
-DB_PATH = os.getenv("DB_PATH", "app/data/vault.db")
+# Buscamos la variable de entorno que pondremos en el Docker-Compose
+# Si no existe (estás en local), usa la ruta de siempre
+env_db = os.getenv("DB_PATH")
+
+if env_db:
+    DB_PATH = env_db
+else:
+    # Ruta para tu PC local
+    DB_PATH = str(Path(__file__).parent / "passmanager.db")
+
+# Esto es clave: si la carpeta contenedora no existe, la creamos
+os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
 
 class AppSession:
     def _init_(self):
@@ -27,9 +38,13 @@ def main(page: ft.Page):
     page.padding = 0
 
     session = AppSession()
-    if os.path.exists(DB_PATH):
-        session.db   = Database(DB_PATH)
-        session.auth = AuthManager(session.db)
+    # 1. Aseguramos que la carpeta contenedora exista (para evitar el error de SQLite)
+    os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
+
+# 2. Inicializamos siempre
+# El constructor de Database (sqlite3.connect) creará el archivo .db si no existe
+    session.db = Database(DB_PATH)
+    session.auth = AuthManager(session.db)
 
     # ── helpers globales ──────────────────────────────────────────────────────
     def show_snack(msg: str, color=ft.Colors.GREEN_400):
